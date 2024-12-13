@@ -1,3 +1,5 @@
+from flask_socketio import SocketIO
+from flask import Flask
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room, leave_room, emit
@@ -11,9 +13,6 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 load_dotenv()
 
-from flask import Flask
-from flask_cors import CORS
-from flask_socketio import SocketIO
 
 app = Flask(__name__)
 
@@ -26,6 +25,8 @@ socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173")
 supabase: Client = create_client(os.getenv("URL"), os.getenv("API_KEY"))
 
 # API routes
+
+
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
@@ -38,7 +39,8 @@ def register():
 
     try:
         # Create user in Supabase Auth
-        response = supabase.auth.sign_up({"email": email, "password": password})
+        response = supabase.auth.sign_up(
+            {"email": email, "password": password})
         if response.get("error"):
             return jsonify({"error": response["error"]["message"]}), 400
 
@@ -69,13 +71,15 @@ def login():
 
     try:
         # Log the user in via Supabase Auth
-        response = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        response = supabase.auth.sign_in_with_password(
+            {"email": email, "password": password})
         if response.get("error"):
             return jsonify({"error": response["error"]["message"]}), 400
 
         user_id = response["data"]["user"]["id"]
         # Fetch additional user details from the "users" table
-        user_data = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        user_data = supabase.table("users").select(
+            "*").eq("id", user_id).single().execute()
         if user_data.get("error"):
             return jsonify({"error": "User not found in custom table"}), 404
 
@@ -98,7 +102,8 @@ def get_user():
 
         user_id = user_response["data"]["id"]
         # Fetch user details from the "users" table
-        user_data = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        user_data = supabase.table("users").select(
+            "*").eq("id", user_id).single().execute()
         if user_data.get("error"):
             return jsonify({"error": "User not found in custom table"}), 404
 
@@ -107,8 +112,42 @@ def get_user():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/fetchUserDeck/<id>")
+# Route to deck a user's deck
+def fetch_deck(id):
+    # Get the deck from supabase
+    deck = supabase.table("Users").select("deck").eq("userID", id).execute()
+
+    # Parse data to get what is wanted
+    deckData = deck.data[0]["deck"]
+
+    return jsonify(deckData)
+
+
+@app.route("/fetchAvailableCards")
+# Route to get all available cards
+def fetch_available_cards():
+    cards = supabase.table("Cards").select("*").execute()
+
+    allCards = cards.data
+
+    return jsonify(allCards)
+
+
+@app.route("/updateDeck/<id>", methods=["POST"])
+# Route to update a user's deck
+def update_deck(id):
+    newDeck = request.get_json()
+
+    response = supabase.table("Users").update(
+        {"deck": newDeck}).eq("userID", id).execute()
+
+    return "success"
+
+
 # WebSocket events
 connected_users = {}
+
 
 @socketio.on("connect")
 def handle_connect():
@@ -155,7 +194,8 @@ def send_message(data):
         emit("error", {"message": "Room ID and message are required."})
         return
 
-    emit("receive_message", {"message": message, "user": request.sid}, to=room_id)
+    emit("receive_message", {"message": message,
+         "user": request.sid}, to=room_id)
     print(f"Message sent to room {room_id}: {message}")
 
 

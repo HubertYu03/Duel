@@ -1,0 +1,30 @@
+.cardListContainer {
+    border: 3px solid #E6CCB2;
+    background: #EDE0D4;
+    padding: 5px;
+    padding-left: 10px;
+    position: relative;
+}
+
+.cardListContainer:hover {
+    cursor: pointer;
+}
+
+.cardListTextContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: end;
+    justify-content: space-between;
+}
+
+.cardListType {
+     font-size: 12px;
+     font-style: italic;
+     color: gray;
+}
+
+.cardListPreview {
+    position: absolute;
+    left: 102%;
+    top: -80px;
+}

@@ -1,30 +1,59 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_socketio import SocketIO, join_room, leave_room, emit
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import os
 
-# Initialize Flask app and Supabase
+# Initialize Flask app, SocketIO, and Supabase
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 load_dotenv()
+
+from flask import Flask
+from flask_cors import CORS
+from flask_socketio import SocketIO
+
+app = Flask(__name__)
+
+# Allow requests from the frontend (http://localhost:5173)
+CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173")
 
 supabase: Client = create_client(os.getenv("URL"), os.getenv("API_KEY"))
 
+# API routes
 @app.route("/register", methods=["POST"])
 def register():
     data = request.json
     email = data.get("email")
     password = data.get("password")
+    username = data.get("username")
 
-    if not email or not password:
-        return jsonify({"error": "Email and password are required"}), 400
+    if not email or not password or not username:
+        return jsonify({"error": "Email, password, and username are required"}), 400
 
     try:
+        # Create user in Supabase Auth
         response = supabase.auth.sign_up({"email": email, "password": password})
         if response.get("error"):
             return jsonify({"error": response["error"]["message"]}), 400
-        return jsonify({"message": "Registration successful", "data": response["data"]}), 200
+
+        user_id = response["data"]["user"]["id"]
+
+        # Insert user into custom users table
+        user_data = {
+            "id": user_id,
+            "email": email,
+            "username": username,
+            "wins": 0,
+            "deck": [],
+        }
+        supabase.table("users").insert(user_data).execute()
+        return jsonify({"message": "Registration successful", "data": user_data}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -39,10 +68,18 @@ def login():
         return jsonify({"error": "Email and password are required"}), 400
 
     try:
+        # Log the user in via Supabase Auth
         response = supabase.auth.sign_in_with_password({"email": email, "password": password})
         if response.get("error"):
             return jsonify({"error": response["error"]["message"]}), 400
-        return jsonify({"message": "Login successful", "data": response["data"]}), 200
+
+        user_id = response["data"]["user"]["id"]
+        # Fetch additional user details from the "users" table
+        user_data = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        if user_data.get("error"):
+            return jsonify({"error": "User not found in custom table"}), 404
+
+        return jsonify({"message": "Login successful", "user": user_data["data"]}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -55,13 +92,72 @@ def get_user():
 
     try:
         token = auth_header.split("Bearer ")[1]
-        user = supabase.auth.get_user(token)
-        if user.get("error"):
-            return jsonify({"error": user["error"]["message"]}), 400
-        return jsonify({"user": user["data"]}), 200
+        user_response = supabase.auth.get_user(token)
+        if user_response.get("error"):
+            return jsonify({"error": user_response["error"]["message"]}), 400
+
+        user_id = user_response["data"]["id"]
+        # Fetch user details from the "users" table
+        user_data = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        if user_data.get("error"):
+            return jsonify({"error": "User not found in custom table"}), 404
+
+        return jsonify({"user": user_data["data"]}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
+# WebSocket events
+connected_users = {}
+
+@socketio.on("connect")
+def handle_connect():
+    print(f"Client connected: {request.sid}")
+    emit("connected", {"message": "You are connected!"})
+
+
+@socketio.on("disconnect")
+def handle_disconnect():
+    print(f"Client disconnected: {request.sid}")
+    connected_users.pop(request.sid, None)
+
+
+@socketio.on("create_room")
+def create_room(data):
+    room_id = data.get("room_id")
+    if not room_id:
+        emit("error", {"message": "Room ID is required."})
+        return
+
+    join_room(room_id)
+    emit("room_created", {"room_id": room_id}, to=room_id)
+    print(f"Room created: {room_id}")
+
+
+@socketio.on("join_room")
+def join_room_event(data):
+    room_id = data.get("room_id")
+    if not room_id:
+        emit("error", {"message": "Room ID is required."})
+        return
+
+    join_room(room_id)
+    emit("room_joined", {"room_id": room_id, "user": request.sid}, to=room_id)
+    print(f"User {request.sid} joined room: {room_id}")
+
+
+@socketio.on("send_message")
+def send_message(data):
+    room_id = data.get("room_id")
+    message = data.get("message")
+
+    if not room_id or not message:
+        emit("error", {"message": "Room ID and message are required."})
+        return
+
+    emit("receive_message", {"message": message, "user": request.sid}, to=room_id)
+    print(f"Message sent to room {room_id}: {message}")
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)

@@ -5,7 +5,7 @@ const Dashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
 
   const handleNavigateToBuildDeck = () => {
-    navigate(`/buildDeck/${user.id}`);
+    //Deck Building stuffff
   };
 
   const handleNavigateToRoomSystem = () => {

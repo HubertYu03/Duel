@@ -106,8 +106,10 @@ def get_user():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+#----------------------------------------------------------#
 # WebSocket events
+#----------------------------------------------------------#
+
 connected_users = {}
 
 @socketio.on("connect")
@@ -150,13 +152,14 @@ def join_room_event(data):
 def send_message(data):
     room_id = data.get("room_id")
     message = data.get("message")
+    username = data.get("username") 
 
     if not room_id or not message:
         emit("error", {"message": "Room ID and message are required."})
         return
 
-    emit("receive_message", {"message": message, "user": request.sid}, to=room_id)
-    print(f"Message sent to room {room_id}: {message}")
+    emit("receive_message", {"message": message, "username": username}, to=room_id)
+
 
 
 if __name__ == "__main__":

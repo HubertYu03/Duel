@@ -9,11 +9,11 @@ const RoomPage = () => {
 
   useEffect(() => {
     // Join the room
-    socket.emit("join_room", { room_id: roomID });
+    socket.emit("join_room", { room_id: roomID, username: localStorage.getItem("username") });
 
     // Listen for incoming messages
     socket.on("receive_message", (data) => {
-      setChat((prevChat) => [...prevChat, data.message]);
+      setChat((prevChat) => [...prevChat, { username: data.username, message: data.message }]);
     });
 
     // Cleanup on unmount
@@ -25,8 +25,11 @@ const RoomPage = () => {
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
-    socket.emit("send_message", { room_id: roomID, message });
-    setChat((prevChat) => [...prevChat, `You: ${message}`]);
+
+    const username = localStorage.getItem("username");
+    socket.emit("send_message", { room_id: roomID, message, username });
+
+    setChat((prevChat) => [...prevChat, { username: "You", message }]);
     setMessage("");
   };
 
@@ -35,7 +38,9 @@ const RoomPage = () => {
       <h1>Room: {roomID}</h1>
       <div style={styles.chatBox}>
         {chat.map((msg, index) => (
-          <p key={index} style={styles.message}>{msg}</p>
+          <p key={index} style={styles.message}>
+            <strong>{msg.username}:</strong> {msg.message}
+          </p>
         ))}
       </div>
       <input

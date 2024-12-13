@@ -1,37 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
 
-const Dashboard = () => {
-  const [user, setUser] = useState(null);
+const Dashboard = ({ user, onLogout }) => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user) {
-        navigate('/');
-      } else {
-        setUser(data.user);
-      }
-    };
-
-    fetchUser();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+  const handleNavigateToBuildDeck = () => {
+    //Put in Build Deck Stuff I wont Touch This
   };
-
-  if (!user) return <p>Loading...</p>;
 
   return (
     <div style={styles.container}>
-      <h1>Welcome to the Dashboard</h1>
-      <p>Username: {user.user_metadata?.username || 'N/A'}</p>
-      <button onClick={handleLogout} style={styles.button}>
+      <h1>Welcome, {user.username}!</h1>
+      <p>Email: {user.email}</p>
+      <button onClick={onLogout} style={styles.logoutButton}>
         Logout
+      </button>
+      <button onClick={handleNavigateToBuildDeck} style={styles.buildDeckButton}>
+        Build Your Deck
       </button>
     </div>
   );
@@ -42,10 +27,21 @@ const styles = {
     textAlign: 'center',
     marginTop: '50px',
   },
-  button: {
+  logoutButton: {
     marginTop: '20px',
     padding: '10px 20px',
     backgroundColor: '#dc3545',
+    color: '#fff',
+    borderRadius: '5px',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '16px',
+    marginRight: '10px',
+  },
+  buildDeckButton: {
+    marginTop: '20px',
+    padding: '10px 20px',
+    backgroundColor: '#007bff',
     color: '#fff',
     borderRadius: '5px',
     border: 'none',

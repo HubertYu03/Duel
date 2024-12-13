@@ -6,35 +6,60 @@ const Registration = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false); // Add this state
 
   const handleRegister = async () => {
     if (!email || !username || !password) {
       setError('All fields are required.');
       return;
     }
-
+  
+    setIsLoading(true);
+  
     try {
-      // Register the user and save the username in `user_metadata`
-      const { data, error } = await supabase.auth.signUp({
+      // Step 1: Register the user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: {
-            username, // Save username in `user_metadata`
-          },
+          data: { username }, // Optional metadata
         },
       });
-
-      if (error) throw error;
+  
+      if (authError) {
+        console.error('Auth signup error:', authError);
+        throw authError;
+      }
+  
+      const userID = authData.user?.id; // Extract the UUID from the auth system
+      if (!userID) throw new Error('User ID not found after signup.');
+  
+      // Step 2: Insert user into 'Users' table
+      const { error: insertError } = await supabase
+        .from('Users')
+        .insert({
+          userID: userID, // Insert the UUID into the new column
+          email,
+          username,
+        });
+  
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        throw insertError;
+      }
+  
       alert('Registration successful! You can now log in.');
     } catch (error) {
-      setError(error.message);
+      console.error('Registration error:', error.message || error);
+      setError(error.message || 'An unknown error occurred.');
+    } finally {
+      setIsLoading(false);
     }
-  };
+  };  
 
   return (
     <div>
-    <input
+      <input
         type="text"
         placeholder="Username"
         value={username}
@@ -56,8 +81,8 @@ const Registration = () => {
         style={styles.input}
       />
       {error && <p style={styles.error}>{error}</p>}
-      <button onClick={handleRegister} style={styles.button}>
-        Sign Up
+      <button onClick={handleRegister} style={styles.button} disabled={isLoading}>
+        {isLoading ? 'Registering...' : 'Sign Up'}
       </button>
     </div>
   );

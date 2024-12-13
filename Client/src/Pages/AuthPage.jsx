@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Login from './Login';
 import Registration from './Registration';
 
-const AuthPage = () => {
+const AuthPage = ({ setUser }) => {
   const [isLogin, setIsLogin] = useState(true);
 
   const toggleAuthMode = () => {
@@ -13,7 +13,8 @@ const AuthPage = () => {
     <div style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.heading}>{isLogin ? 'Welcome Back!' : 'Create an Account'}</h1>
-        {isLogin ? <Login /> : <Registration />}
+        {/* Pass setUser to Login and Registration */}
+        {isLogin ? <Login setUser={setUser} /> : <Registration setUser={setUser} />}
         <p style={styles.toggleText}>
           {isLogin ? "Don't have an account?" : 'Already have an account?'}
           <button style={styles.toggleButton} onClick={toggleAuthMode}>

@@ -28,16 +28,21 @@ const App = () => {
     <Routes>
       <Route
         path="/"
-        element={user ? <Navigate to="/dashboard" /> : <AuthPage setUser={setUser} />}
+        element={
+          user ? <Navigate to="/dashboard" /> : <AuthPage setUser={setUser} />
+        }
       />
       <Route
         path="/dashboard"
-        element={user ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/" />}
+        element={
+          user ? (
+            <Dashboard user={user} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/" />
+          )
+        }
       />
-      <Route
-        path="/buildDeck/:userID"
-        element={user ? <BuildDeck /> : <Navigate to="/" />}
-      />
+      <Route path="/buildDeck/:userID" element={<BuildDeck />} />
       <Route
         path="/roomNavigation"
         element={user ? <RoomNavigation /> : <Navigate to="/" />}

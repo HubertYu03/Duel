@@ -71,10 +71,11 @@ const styles = {
     borderRadius: '5px',
     border: '1px solid #ccc',
     fontSize: '14px',
+    boxSizing: 'border-box',
   },
   button: {
     width: '100%',
-    padding: '10px',
+    padding: '12px',
     backgroundColor: '#28a745',
     color: '#fff',
     borderRadius: '5px',

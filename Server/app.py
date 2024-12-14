@@ -206,7 +206,8 @@ def join_room_event(data):
 
         # If there are enough players, start the game
         if (len(rooms[room_id]["users"]) == 2):
-            emit("game_start", to=room_id)
+            emit("game_start", {
+                 "users": rooms[room_id]["users"]}, to=room_id)
 
         print(f"User {request.sid} joined room: {room_id}")
 
@@ -229,10 +230,24 @@ def send_message(data):
 @socketio.on("game_setup")
 def initialize_game(data):
     room_id = data.get("room_id")
-    userDeck = data.get("deck")
-    hp = data.get("hp")
+    turnIndex = data.get("turnIndex")
+    user = data.get("user")
 
-    print("Test")
+    # Announce to room who is going first
+    socketio.emit(
+        "game_first", {"turnIndex": turnIndex, "user": user}, to=room_id)
+
+    print(data["user"]["username"])
+
+
+@socketio.on("card_played")
+def card_played(data):
+    room_id = data.get("room_id")
+    card = data.get("card")
+    user = data.get("username")
+
+    socketio.emit("card_played_by_opponent", {
+                  "card": card, "username": user}, to=room_id)
 
 
 if __name__ == "__main__":

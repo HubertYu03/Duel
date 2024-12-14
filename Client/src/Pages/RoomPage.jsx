@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { data, useParams } from "react-router-dom";
 import socket from "../socket";
+
+import { AnimatePresence, motion } from "framer-motion";
 
 import "../Styles/gamePage.css";
 
 import axios from "axios";
+import CardInHand from "../Components/CardInHand";
 
 const RoomPage = () => {
   const API_URL = import.meta.env.VITE_API_URL; // Get the API URL from environment variables
@@ -16,10 +19,38 @@ const RoomPage = () => {
 
   // States for game management
   const [gameStart, setGameStart] = useState(false);
+  const [gameSetUpComplete, setGameSetUpComplete] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
 
   // States for gameplay
   const [hand, setHand] = useState([]);
   const [currentDeck, setCurrentDeck] = useState([]);
+  const [hp, setHp] = useState(20);
+  const [playerList, setPlayerList] = useState([]);
+  const [currentPlayerId, setCurrentPlayerId] = useState("");
+  const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
+
+  // State for play area
+  const [inPlayArea, setInPlayArea] = useState(false);
+
+  const playAreaRef = useRef(null);
+
+  // Function to check if card is inside play area
+  const checkCardOverPlayArea = (dragTop, dragBottom, dragRight, dragLeft) => {
+    if (playAreaRef.current) {
+      const rect = playAreaRef.current.getBoundingClientRect();
+
+      const isOverlap = !(
+        dragRight < rect.left + window.scrollX ||
+        dragLeft > rect.right + window.scrollX ||
+        dragBottom < rect.top + window.scrollY ||
+        dragTop > rect.bottom + window.scrollY
+      );
+
+      // console.log(isOverlap);
+      setInPlayArea(isOverlap);
+    }
+  };
 
   // Function used to fetch a user's deck
   const fetchDeck = () => {
@@ -33,10 +64,6 @@ const RoomPage = () => {
       .catch((err) => {
         console.log(err);
       });
-  };
-
-  const test = () => {
-    console.log(currentDeck);
   };
 
   useEffect(() => {
@@ -74,23 +101,41 @@ const RoomPage = () => {
   };
 
   // Function to draw cards
-  const drawCard = () => {
-    // Save a state of the current deck
-    let deckState = [...currentDeck];
+  const drawCard = (num) => {
+    // Create a new reference of the deck and hand to avoid direct mutation
+    let deckState = [...currentDeck]; // Make a copy of currentDeck
+    let handState = [...hand]; // Make a copy of hand
 
-    // Save a state of the current hand
-    let handState = hand;
+    // Draw a card based on the number of times
+    for (let i = 0; i < num; i++) {
+      const drawnCard = deckState.shift(); // Removes the first card from deckState
+      handState.push(drawnCard);
+    }
 
-    // Drawn card
-    const drawnCard = deckState.shift();
-    handState.push(drawnCard);
+    setHand(handState); // Directly set the new state for hand
+    setCurrentDeck(deckState); // Directly set the new state for deck
+  };
 
-    // Update states
-    setHand(handState);
-    setCurrentDeck(deckState);
+  const playCard = (card, index) => {
+    // Check to see if the card is in the play area
+    if (inPlayArea) {
+      // Reset play area
+      setInPlayArea(false);
 
-    console.log(handState);
-    console.log(deckState);
+      // Check if it is the current player's turn so they can play a card
+      if (currentPlayerId == localStorage.getItem("userID")) {
+        let handState = [...hand];
+        handState.splice(index, 1);
+
+        socket.emit("card_played", {
+          card: card,
+          room_id: roomID,
+          username: localStorage.getItem("username"),
+        });
+
+        setHand(handState);
+      }
+    }
   };
 
   // Use effect on page launch
@@ -117,20 +162,60 @@ const RoomPage = () => {
     });
 
     // Listen for game start
-    socket.on("game_start", () => {
+    socket.on("game_start", (data) => {
       console.log("GAME START!");
+
+      console.log(data.users);
+      setPlayerList(data.users);
+
+      setCurrentPlayerId(data.users[0].user_id);
 
       // Wait 2 seconds before starting the game so that you can inspect the opponent
       setTimeout(() => {
         setGameStart(true);
       }, 2000);
     });
-  }, [socket]);
+
+    // Setting up who goes first
+    socket.on("game_first", (data) => {
+      console.log(data.user.username + " is going first.");
+
+      drawCard(3);
+      setGameSetUpComplete(true);
+
+      // Send an announcement of who is going first for 2 Seconds
+      setAnnouncement(data.user.username + "'s Turn");
+      setTimeout(() => {
+        setAnnouncement("");
+      }, 2000);
+    });
+
+    // Socket listener for when another player plays a card
+    socket.on("card_played_by_opponent", (data) => {
+      console.log(data.username + " has played " + data.card.name);
+    });
+
+    return () => {
+      socket.off("game_first");
+    };
+  }, [socket, currentDeck]);
 
   const gameSetUp = () => {
-    drawCard();
-    drawCard();
-    drawCard();
+    // On game set up many things need to happen
+    // Choose who goes first and tell all users
+    console.log(playerList);
+    const randomIndex = Math.floor(Math.random() * playerList.length);
+
+    // A random player is selected to go first, and the index starts on them
+    setCurrentPlayerId(playerList[randomIndex].user_id);
+    setCurrentTurnIndex(randomIndex);
+
+    // Tell the room who is going first
+    socket.emit("game_setup", {
+      user: playerList[randomIndex],
+      turnIndex: randomIndex,
+      room_id: roomID,
+    });
   };
 
   return (
@@ -141,18 +226,63 @@ const RoomPage = () => {
           <div className="opponentContainer">
             <div className="playerName">{opponent}</div>
           </div>
+          {/* The person who made the lobby will get to start the game */}
+          {currentPlayerId == localStorage.getItem("userID") &&
+            !gameSetUpComplete && (
+              <button onClick={gameSetUp}>Start Match</button>
+            )}
 
-          <button onClick={gameSetUp}>Start Match</button>
+          {/* Announcement component */}
+          <AnimatePresence>
+            {announcement != "" && (
+              <motion.div
+                className="announcement"
+                initial={{
+                  opacity: 0,
+                  y: -20,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                exit={{
+                  opacity: 0,
+                  y: 20,
+                }}
+              >
+                {announcement}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Play Area */}
+          {inPlayArea ? (
+            <div className="playAreaHover" ref={playAreaRef}>
+              Drop card to play.
+            </div>
+          ) : (
+            <div className="playArea" ref={playAreaRef}>
+              Drag card here to play.
+            </div>
+          )}
 
           {/* Your side  */}
-          <div className="youContainer">
-            <div className="playerName">{you}</div>
-          </div>
-
-          <div>
-            {hand.map((card, index) => (
-              <div key={index}>{card.name}</div>
-            ))}
+          <div className="yourSide">
+            <div className="youContainer">
+              {/* Hand container */}
+              <div className="handContainer">
+                {hand.map((card, index) => (
+                  <CardInHand
+                    key={index}
+                    card={card}
+                    playCard={playCard}
+                    index={index}
+                    checkCardOverPlayArea={checkCardOverPlayArea}
+                  />
+                ))}
+              </div>
+            </div>
+            <div>{you}</div>
           </div>
         </div>
       ) : (

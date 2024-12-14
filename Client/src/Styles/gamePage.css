@@ -5,10 +5,12 @@
 
 .gameBoardContainer {
     height: 95vh;
+    width: 100vw;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
+    position: relative;
 }
 
 .opponentContainer {
@@ -16,15 +18,54 @@
     width: 50%;
     text-align: right;
     padding-right: 5%;
+
+    display: flex;
+    justify-content: center;
 }
 
 .youContainer {
-    border: 1px solid black;
-    width: 50%;
+    width: 100%;
     text-align: left;
     padding-left: 5%;
+
+    display: flex;
+    justify-content: center;
 }
 
 .playerName {
     font-size: 30px;
+}
+
+.handContainer {
+    display: flex;
+    flex-direction: row;
+    margin-right: 50px;
+    margin-bottom: 20px;
+}
+
+.announcement {
+    font-size: 50px;
+    font-weight: 900;
+    position: absolute;
+    top: 50%;                 
+    left: 50%;
+    translate: -50% -50%;
+}
+
+.playArea {
+    height: 300px;
+    width: 70%;
+    background-color: lightgray;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.playAreaHover {
+    height: 300px;
+    width: 70%;
+    background-color: lightblue;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }

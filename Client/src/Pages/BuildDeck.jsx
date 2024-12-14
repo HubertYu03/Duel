@@ -53,12 +53,14 @@ const BuildDeck = () => {
 
         available.sort((a, b) => a.id - b.id);
 
-        for (let i = 0; i < deck.length; i++) {
-          for (let j = 0; j < available.length; j++) {
-            // Remove the first instance of a card from the available cards
-            if (deck[i].id == available[j].id) {
-              available.splice(j, 1);
-              continue;
+        if (deck) {
+          for (let i = 0; i < deck.length; i++) {
+            for (let j = 0; j < available.length; j++) {
+              // Remove the first instance of a card from the available cards
+              if (deck[i].id == available[j].id) {
+                available.splice(j, 1);
+                continue;
+              }
             }
           }
         }
@@ -146,7 +148,12 @@ const BuildDeck = () => {
 
   return (
     <div className="pageContainer">
-      <div>Back to Dashboard</div>
+      <div
+        onClick={() => navigate("/Dashboard")}
+        className="builderToDashboard"
+      >
+        Back to Dashboard
+      </div>
 
       <div className="buildDeckTitle">DECK EDITOR</div>
 
@@ -155,18 +162,18 @@ const BuildDeck = () => {
           {/* Deck length indicator */}
           <div className="yourDeck">
             Your Deck{" "}
-            {deck.length > 20 ? (
-              <b
-                style={{
-                  color: "red",
-                }}
-              >
-                {deck.length}/20
-              </b>
-            ) : (
-              <b>{deck.length}/20</b>
-            )}
-            :
+            {deck &&
+              (deck.length > 20 ? (
+                <b
+                  style={{
+                    color: "red",
+                  }}
+                >
+                  {deck.length}/20:
+                </b>
+              ) : (
+                <b>{deck.length}/20:</b>
+              ))}
           </div>
 
           {/* Button to save deck */}
@@ -196,28 +203,29 @@ const BuildDeck = () => {
           {success != "" && <div className="success">{success}</div>}
 
           {/* Users current deck selection */}
-          {deck.length == 0 ? (
-            <div
-              style={{
-                color: "gray",
-                textAlign: "center",
-                marginTop: "30px",
-              }}
-            >
-              Click on cards to add to deck!
-            </div>
-          ) : (
-            <div className="userDeckListContainer">
-              {deck.map((card, index) => (
-                <CardInList
-                  key={index}
-                  card={card}
-                  index={index}
-                  removeCard={removeFromDeck}
-                />
-              ))}
-            </div>
-          )}
+          {deck &&
+            (deck.length == 0 ? (
+              <div
+                style={{
+                  color: "gray",
+                  textAlign: "center",
+                  marginTop: "30px",
+                }}
+              >
+                Click on cards to add to deck!
+              </div>
+            ) : (
+              <div className="userDeckListContainer">
+                {deck.map((card, index) => (
+                  <CardInList
+                    key={index}
+                    card={card}
+                    index={index}
+                    removeCard={removeFromDeck}
+                  />
+                ))}
+              </div>
+            ))}
         </div>
         <div className="availableCardsContainer">
           {availableCards.map((card, index) => (

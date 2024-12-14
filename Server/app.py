@@ -148,6 +148,8 @@ def update_deck(id):
 # WebSocket events
 connected_users = {}
 
+rooms = {}
+
 
 @socketio.on("connect")
 def handle_connect():
@@ -169,6 +171,11 @@ def create_room(data):
         return
 
     join_room(room_id)
+
+    rooms[room_id] = {
+        "users": []
+    }
+
     emit("room_created", {"room_id": room_id}, to=room_id)
     print(f"Room created: {room_id}")
 
@@ -181,8 +188,27 @@ def join_room_event(data):
         return
 
     join_room(room_id)
-    emit("room_joined", {"room_id": room_id, "user": request.sid}, to=room_id)
-    print(f"User {request.sid} joined room: {room_id}")
+
+    users = rooms[room_id]["users"]
+
+    if data.get("user") not in users:
+        users.append(data.get("user"))
+
+        rooms[room_id] = {
+            "users": users
+        }
+
+        print(rooms[room_id]["users"])
+
+        # Send user data to people in the room so it can update client side
+        emit("room_joined", {"room_id": room_id,
+             "user": request.sid, "users": rooms[room_id]["users"]}, to=room_id)
+
+        # If there are enough players, start the game
+        if (len(rooms[room_id]["users"]) == 2):
+            emit("game_start", to=room_id)
+
+        print(f"User {request.sid} joined room: {room_id}")
 
 
 @socketio.on("send_message")
@@ -196,7 +222,17 @@ def send_message(data):
 
     emit("receive_message", {"message": message,
          "user": request.sid}, to=room_id)
+
     print(f"Message sent to room {room_id}: {message}")
+
+
+@socketio.on("game_setup")
+def initialize_game(data):
+    room_id = data.get("room_id")
+    userDeck = data.get("deck")
+    hp = data.get("hp")
+
+    print("Test")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,30 @@
+* {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.gameBoardContainer {
+    height: 95vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.opponentContainer {
+    border: 1px solid black;
+    width: 50%;
+    text-align: right;
+    padding-right: 5%;
+}
+
+.youContainer {
+    border: 1px solid black;
+    width: 50%;
+    text-align: left;
+    padding-left: 5%;
+}
+
+.playerName {
+    font-size: 30px;
+}

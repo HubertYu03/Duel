@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import socket from "../socket";
+
+import "../Styles/roomNavigation.css";
 
 const RoomNavigation = () => {
   const [roomID, setRoomID] = useState("");
@@ -28,22 +31,69 @@ const RoomNavigation = () => {
 
   return (
     <div style={styles.container}>
-      <h1>Join or Create a Room</h1>
+      {/* button to return to dashboard */}
+      <motion.button
+        className="navBackButton"
+        whileHover={{
+          scale: 1.05,
+        }}
+        whileTap={{
+          scale: 0.95,
+        }}
+        onClick={() => navigate("/Dashboard")}
+      >
+        ⬅ Back to Dashboard
+      </motion.button>
+
+      <div className="roonNavTitle">Join or Create a Room</div>
       <input
         type="text"
         value={roomID}
         onChange={(e) => setRoomID(e.target.value)}
         placeholder="Enter Room ID"
-        style={styles.input}
+        className="roomIdInput"
       />
-      {error && <p style={styles.error}>{error}</p>}
-      <div>
-        <button onClick={handleCreateRoom} style={styles.button}>
+      {error && (
+        <motion.p
+          style={styles.error}
+          initial={{
+            opacity: 0,
+            y: -10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+        >
+          {error}
+        </motion.p>
+      )}
+
+      <div className="navButtonContainer">
+        <motion.button
+          className="navButton"
+          whileHover={{
+            scale: 1.05,
+          }}
+          whileTap={{
+            scale: 0.95,
+          }}
+          onClick={handleCreateRoom}
+        >
           Create Room
-        </button>
-        <button onClick={handleJoinRoom} style={styles.button}>
+        </motion.button>
+        <motion.button
+          className="navButton"
+          whileHover={{
+            scale: 1.05,
+          }}
+          whileTap={{
+            scale: 0.95,
+          }}
+          onClick={handleJoinRoom}
+        >
           Join Room
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -53,6 +103,9 @@ const styles = {
   container: {
     textAlign: "center",
     marginTop: "50px",
+    display: "flex",
+    alignItems: "center",
+    flexDirection: "column",
   },
   input: {
     width: "300px",
@@ -68,7 +121,8 @@ const styles = {
   },
   error: {
     color: "red",
-    fontSize: "14px",
+    fontSize: "16px",
+    marginTop: "20px",
   },
 };
 

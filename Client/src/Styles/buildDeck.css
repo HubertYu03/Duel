@@ -9,6 +9,17 @@
     margin-bottom: 10px;
 }
 
+.builderToDashboard {
+    font-size: 20px;
+    margin-top: 20px;
+    margin-left: 10px;
+}
+
+.builderToDashboard:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 .availableCardsContainer {
     display: flex;
     flex-direction: row;

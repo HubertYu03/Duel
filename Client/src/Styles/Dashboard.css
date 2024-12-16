@@ -1,0 +1,52 @@
+.gameTitle {
+    font-size: 200px;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-style: italic;
+    color: gray;
+}
+
+.username {
+    font-size: 50px;
+    margin-bottom: 10px;
+}
+
+.battleAwaits {
+    font-size: 30px;
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.631)
+}
+
+.dashboardButtonContainers {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.buttonDescContainer {
+    width: 300px;
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dashboardButton {
+    padding: 15px;
+    padding-left: 30px;
+    padding-right: 30px;
+    font-size: 20px;
+    color: white;
+    border: none;
+    border-radius: 10px;
+}
+
+.dashboardButton:hover {
+    cursor: pointer;
+}
+
+.buttonDesc {
+    text-align: center;
+    color: gray;   
+    font-style: italic;
+}

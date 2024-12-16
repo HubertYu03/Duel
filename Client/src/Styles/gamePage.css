@@ -1,0 +1,158 @@
+* {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.gameBoardContainer {
+    height: 96vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    background-color: lightgray;
+}
+
+.startGameButton {
+    padding: 20px;
+    padding-right: 40px;
+    padding-left: 40px;
+    font-size: 20px;
+    border: none;
+    border-radius: 10px;
+}
+
+.startGameButton:hover {
+    cursor: pointer;
+}
+
+.opponentContainer {
+    text-align: right;
+
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+}
+
+.opponentCardContainer {
+    display: flex;
+    flex-direction: row;
+}
+
+.youContainer {
+    width: 100%;
+    text-align: left;
+    padding-left: 5%;
+
+    display: flex;
+    justify-content: center;
+}
+
+.yourSideProfile {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    align-items: center;
+}
+
+.playerName {
+    font-size: 40px;
+    font-weight: 600;
+}
+
+.hp {
+    font-size: 20px;
+}
+
+.handContainer {
+    display: flex;
+    flex-direction: row;
+    margin-right: 50px;
+    margin-bottom: 20px;
+}
+
+.announcement {
+    font-size: 50px;
+    font-weight: 900;
+    position: absolute;
+    top: 50%;                 
+    left: 50%;
+    translate: -50% -50%;
+}
+
+.playedCardAnnoucement {
+    position: absolute;
+    top: 50%;                 
+    left: 50%;
+    translate: -50% -50%;
+}
+
+.battleAnnouncement {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+
+.shieldContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+}
+
+.shield{
+    width: 30px;
+    height: 30px;
+}
+
+.playArea {
+    height: 300px;
+    width: 70%;
+    background-color: lightgray;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.playAreaHover {
+    height: 300px;
+    width: 70%;
+    background-color: lightblue;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.winning {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10%;
+}
+
+.gameOverMessage {
+    font-size: 70px;
+    font-weight: 900;
+}
+
+.postGameButtonContainer {
+    margin-top: 30px;
+}
+
+.returnButton {
+    padding: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 18px;
+    font-weight: 300;
+    border: none;
+    border-radius: 10px;
+    background-color: white;
+}
+
+.returnButton:hover {
+    cursor: pointer;
+}

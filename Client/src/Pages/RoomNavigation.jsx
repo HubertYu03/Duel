@@ -23,10 +23,7 @@ const RoomNavigation = () => {
       setError("Room ID cannot be empty.");
       return;
     }
-    socket.emit("join_room", { room_id: roomID }, () => {
-      console.log(`Joined room ${roomID}`);
-      navigate(`/room/${roomID}`); // Navigate to the room page
-    });
+    navigate(`/room/${roomID}`); // Navigate to the room page
   };
 
   return (

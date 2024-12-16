@@ -5,6 +5,7 @@ import Dashboard from "./Pages/Dashboard";
 import BuildDeck from "./Pages/BuildDeck";
 import RoomNavigation from "./Pages/RoomNavigation";
 import RoomPage from "./Pages/RoomPage";
+import GamePage from "./Pages/GamePage";
 
 const App = () => {
   const [user, setUser] = useState(null);

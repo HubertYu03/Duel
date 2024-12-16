@@ -472,8 +472,41 @@ const RoomPage = () => {
           >
             {/* Opponent's side  */}
             <div className="opponentContainer">
-              <div>{opponent}</div>
-              <div>{opponentHp}</div>
+              <div className="yourSideProfile">
+                <div
+                  className="playerName"
+                  style={{
+                    marginTop: !gameSetUpComplete ? "20px" : "0px",
+                  }}
+                >
+                  {opponent}
+                </div>
+                {gameSetUpComplete && (
+                  <>
+                    <progress
+                      value={opponentHp}
+                      max={20}
+                      className="healthBar"
+                      style={{
+                        width: "300px",
+                        height: "30px",
+                        border: "1px solid", // Optional: Border to make the health bar more defined
+                        backgroundColor: "#e0e0e0", // Light gray background for the empty bar
+                      }}
+                    ></progress>
+                    <div className="hp">{opponentHp}/20</div>
+
+                    {/* shield container */}
+                    {opponentShield != 0 && (
+                      <div className="shieldContainer">
+                        <img src={Shield} alt="shield" className="shield" />
+                        <div>{opponentShield}</div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
               <div className="opponentCardContainer">
                 {Array.from({ length: opponentHandCount }, (_, index) => (
                   <CardBack key={index} />
@@ -482,10 +515,27 @@ const RoomPage = () => {
             </div>
 
             {/* The person who made the lobby will get to start the game */}
-            {currentPlayerId == localStorage.getItem("userID") &&
+            {currentPlayerId == localStorage.getItem("userID") ? (
               !gameSetUpComplete && (
-                <button onClick={gameSetUp}>Start Match</button>
-              )}
+                <motion.button
+                  onClick={gameSetUp}
+                  whileHover={{
+                    scale: 1.05,
+                  }}
+                  whileTap={{
+                    scale: 0.95,
+                  }}
+                  className="startGameButton"
+                >
+                  Start Match
+                </motion.button>
+              )
+            ) : (
+              <div>
+                {!gameSetUpComplete &&
+                  "Waiting for room host to start match..."}
+              </div>
+            )}
 
             {/* Battle Announcement */}
             <AnimatePresence>
@@ -606,7 +656,14 @@ const RoomPage = () => {
               </div>
 
               <div className="yourSideProfile">
-                <div className="playerName">{you}</div>
+                <div
+                  className="playerName"
+                  style={{
+                    marginBottom: !gameSetUpComplete ? "20px" : "0px",
+                  }}
+                >
+                  {you}
+                </div>
                 {gameSetUpComplete && (
                   <>
                     <progress
@@ -614,13 +671,13 @@ const RoomPage = () => {
                       max={20}
                       className="healthBar"
                       style={{
-                        width: "200px",
+                        width: "300px",
                         height: "30px",
                         border: "1px solid", // Optional: Border to make the health bar more defined
                         backgroundColor: "#e0e0e0", // Light gray background for the empty bar
                       }}
                     ></progress>
-                    <div>{hp}/20</div>
+                    <div className="hp">{hp}/20</div>
 
                     {/* shield container */}
                     {shield != 0 && (

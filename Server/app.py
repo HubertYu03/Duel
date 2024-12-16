@@ -1,10 +1,10 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, leave_room, emit
-from dotenv import load_dotenv
-from supabase import create_client, Client
 import os
-import eventlet
+from supabase import create_client, Client
+from dotenv import load_dotenv
+from flask_socketio import SocketIO, join_room, leave_room, emit
+from flask_cors import CORS
+from flask import Flask, jsonify, request
+
 
 # Initialize Flask app, SocketIO, and Supabase
 app = Flask(__name__)
@@ -12,19 +12,19 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 load_dotenv()
 
-
-app = Flask(__name__)
-
 # Allow requests from the frontend (http://localhost:5173)
 CORS(app, resources={
-     r"/*": {"origins": "http://localhost:5173"}}, async_mode=eventlet)
+     r"/*": {"origins": "http://localhost:5173"}})
 
-# Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173")
-
+# Supabase intialization
 supabase: Client = create_client(os.getenv("URL"), os.getenv("API_KEY"))
 
 # API routes
+
+
+@app.route('/')
+def index():
+    return "Hello World"
 
 
 @app.route("/register", methods=["POST"])

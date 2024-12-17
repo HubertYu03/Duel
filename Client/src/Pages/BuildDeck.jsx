@@ -25,7 +25,11 @@ const BuildDeck = () => {
     axios
       .get(`${API_URL}/fetchUserDeck/${userID}`)
       .then((res) => {
-        setDeck(res.data); // Update state with fetched data
+        if (res.data[0].length == 0) {
+          setDeck(res.data[0]);
+        } else {
+          setDeck(res.data); // Update state with fetched data
+        }
 
         // Fetch the available cards
         fetchAvailableCards(res.data);
@@ -148,12 +152,19 @@ const BuildDeck = () => {
 
   return (
     <div className="pageContainer">
-      <div
+      {/* button to return to dashboard */}
+      <motion.button
+        className="navBackButton"
+        whileHover={{
+          scale: 1.05,
+        }}
+        whileTap={{
+          scale: 0.95,
+        }}
         onClick={() => navigate("/Dashboard")}
-        className="builderToDashboard"
       >
-        Back to Dashboard
-      </div>
+        ⬅ Back to Dashboard
+      </motion.button>
 
       <div className="buildDeckTitle">DECK EDITOR</div>
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import socket from "../socket";
@@ -15,19 +15,31 @@ const RoomNavigation = () => {
       setError("Room ID cannot be empty.");
       return;
     }
-    socket.emit("create_room", { room_id: roomID }, () => {
-      console.log(`Room ${roomID} created`);
-      navigate(`/room/${roomID}`); // Navigate to the room page
-    });
+
+    // Tell socket you are creating a room
+    socket.emit("create_room", { room_id: roomID });
   };
 
   const handleJoinRoom = () => {
     if (!roomID.trim()) {
       setError("Room ID cannot be empty.");
       return;
+    } else {
+      navigate(`/room/${roomID}`); // Navigate to the room page
     }
-    navigate(`/room/${roomID}`); // Navigate to the room page
   };
+
+  useEffect(() => {
+    // Create the room is the room is valid
+    socket.on("create_room_valid", (data) => {
+      navigate(`/room/${data.room_id}`);
+    });
+
+    // If the room already exists when creating a room
+    socket.on("create_room_invalid", () => {
+      setError("Room ID already taken!");
+    });
+  }, [socket, error]);
 
   return (
     <div style={styles.container}>

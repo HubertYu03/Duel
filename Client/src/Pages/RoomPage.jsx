@@ -28,9 +28,10 @@ const RoomPage = () => {
   const [announcement, setAnnouncement] = useState("");
   const [battleAnnouncement, setBattleAnnouncement] = useState("");
   const [gameOver, setGameOver] = useState(false);
-  const [winner, setWinner] = useState("");
-  const [loser, setLoser] = useState("");
   const [gameOverMessage, setGameOverMessage] = useState("");
+  const [victory, setVictory] = useState(false);
+
+  const [opponentDisconnected, setOpponentDisconnected] = useState(false);
 
   // States for gameplay
   const [hand, setHand] = useState([]);
@@ -43,6 +44,7 @@ const RoomPage = () => {
   const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
 
   const [playedCard, setPlayedCard] = useState(null);
+  const [canPlay, setCanPlay] = useState(false);
 
   // Opponent states
   const [opponentHandCount, setOpponentHandCount] = useState(0);
@@ -84,6 +86,8 @@ const RoomPage = () => {
   };
 
   useEffect(() => {
+    console.log("joining room " + roomID);
+
     // Join the room
     socket.emit("join_room", {
       room_id: roomID,
@@ -138,6 +142,8 @@ const RoomPage = () => {
     if (inPlayArea) {
       // Reset play area
       setInPlayArea(false);
+
+      setCanPlay(false);
 
       // Check if it is the current player's turn so they can play a card
       if (currentPlayerId == localStorage.getItem("userID")) {
@@ -246,6 +252,11 @@ const RoomPage = () => {
       setCurrentPlayerId(data.user.user_id);
       setCurrentTurnIndex(data.turnIndex);
 
+      // First player may play a card
+      if (data.user.user_id == localStorage.getItem("userID")) {
+        setCanPlay(true);
+      }
+
       // Draw 3 cards and the game can begin
       drawCard(3);
       setGameSetUpComplete(true);
@@ -308,15 +319,20 @@ const RoomPage = () => {
         return; // Prevent any further actions
       }
 
+      // Update current turn data
+      setCurrentPlayerId(data.user_id);
+      setCurrentTurnIndex(data.index);
+
       setTimeout(() => {
         setAnnouncement(data.username + "'s Turn");
 
         setTimeout(() => {
           setAnnouncement("");
 
-          // Update current turn data
-          setCurrentPlayerId(data.user_id);
-          setCurrentTurnIndex(data.index);
+          // Let the user play the card
+          if (data.user_id == localStorage.getItem("userID")) {
+            setCanPlay(true);
+          }
         }, 2000);
 
         // Check to see who is going, they will first draw a card
@@ -416,13 +432,26 @@ const RoomPage = () => {
       socket.off("update_turn_order");
 
       setGameOver(true);
-      setAnnouncement("GAME OVER!");
 
       if (localStorage.getItem("userID") == data.user_id) {
+        setAnnouncement("DEFEAT!");
         setGameOverMessage("You have been defeated!");
       } else {
+        setAnnouncement("VICTORY!");
         setGameOverMessage("You have defeated " + data.username + "!");
+        setVictory(true);
       }
+    });
+
+    // Listening to see if a user disconnected
+    socket.on("opponent_disconnected", () => {
+      console.log("Opponent disconnected");
+
+      setOpponentDisconnected(true);
+
+      setTimeout(() => {
+        returntoDashboard();
+      }, 2000);
     });
 
     return () => {
@@ -560,6 +589,23 @@ const RoomPage = () => {
               )}
             </AnimatePresence>
 
+            {/* Opponent disconnected */}
+            {opponentDisconnected && (
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  y: -20,
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                }}
+                className="battleAnnouncement"
+              >
+                {opponent} has disconnected. Returning to Dashboard...
+              </motion.div>
+            )}
+
             {/* Announcement component */}
             <AnimatePresence>
               {announcement != "" && (
@@ -647,9 +693,7 @@ const RoomPage = () => {
                       playCard={playCard}
                       index={index}
                       checkCardOverPlayArea={checkCardOverPlayArea}
-                      isDraggable={
-                        currentPlayerId == localStorage.getItem("userID")
-                      }
+                      isDraggable={canPlay}
                     />
                   ))}
                 </div>
@@ -699,7 +743,25 @@ const RoomPage = () => {
           >
             <div className="preGameName">{you}</div>
             {opponent == "" ? (
-              <div className="matchFound">Waiting for an opponent...</div>
+              <div>
+                <div className="matchFound">Waiting for an opponent...</div>
+                <motion.button
+                  onClick={returntoDashboard}
+                  className="returnButton"
+                  style={{
+                    marginTop: "20px",
+                    background: "lightgray",
+                  }}
+                  whileHover={{
+                    scale: 1.05,
+                  }}
+                  whileTap={{
+                    scale: 0.95,
+                  }}
+                >
+                  Cancel queue
+                </motion.button>
+              </div>
             ) : (
               <motion.div
                 initial={{
@@ -732,6 +794,16 @@ const RoomPage = () => {
                   animate={{
                     opacity: 1,
                     scale: 1,
+                    transition: {
+                      type: "spring",
+                      stiffness: 100,
+                      damping: 20,
+                      mass: 1,
+                    },
+                  }}
+                  style={{
+                    color: victory ? "gold" : "red",
+                    fontSize: "80px",
                   }}
                 >
                   {announcement}

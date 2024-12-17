@@ -13,8 +13,8 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 load_dotenv()
 
 # Allow requests from the frontend (http://localhost:5173)
-CORS(app, resources={
-     r"/*": {"origins": "http://localhost:5173"}})
+# CORS(app, resources={
+#      r"/*": {"origins": "http://localhost:5173"}})
 
 # Supabase intialization
 supabase: Client = create_client(os.getenv("URL"), os.getenv("API_KEY"))
@@ -153,12 +153,40 @@ rooms = {}
 
 @socketio.on("connect")
 def handle_connect():
+    # Clean up rooms
+    # Get all room ids
+    room_ids = list(rooms.keys())
+
+    for id in room_ids:
+        if len(rooms[id]['users']) == 0:
+            del rooms[id]
+
     print(f"Client connected: {request.sid}")
     emit("connected", {"message": "You are connected!"})
 
 
 @socketio.on("disconnect")
 def handle_disconnect():
+
+    room_id = 0
+
+    # Get all room ids
+    room_ids = list(rooms.keys())
+
+    # Find the user that left that room and delete him from the room
+    for id in room_ids:
+        for user in rooms[id]["users"]:
+            if user["sid"] == request.sid:
+                room_id = id
+
+    print("A user has just left this room id:")
+    print(room_id)
+
+    # Tell users still in that room that an opponent disconnected
+    socketio.emit("opponent_disconnected", to=room_id)
+
+    leave_room(room_id)
+
     print(f"Client disconnected: {request.sid}")
     connected_users.pop(request.sid, None)
 
@@ -170,14 +198,18 @@ def create_room(data):
         emit("error", {"message": "Room ID is required."})
         return
 
-    join_room(room_id)
+    if room_id not in rooms:
+        join_room(room_id)
 
-    rooms[room_id] = {
-        "users": []
-    }
+        rooms[room_id] = {
+            "users": []
+        }
 
-    emit("room_created", {"room_id": room_id}, to=room_id)
-    print(f"Room created: {room_id}")
+        socketio.emit("create_room_valid", {"room_id": room_id})
+        print(f"Room created: {room_id}")
+    else:
+        print("room already exists!")
+        socketio.emit("create_room_invalid")
 
 
 @socketio.on("join_room")
@@ -189,13 +221,14 @@ def join_room_event(data):
 
     join_room(room_id)
 
-    users = rooms[room_id]["users"]
+    user = data.get("user")
+    user["sid"] = request.sid
 
-    if data.get("user") not in users:
-        users.append(data.get("user"))
+    if user not in rooms[room_id]["users"]:
+        rooms[room_id]["users"].append(data.get("user"))
 
         rooms[room_id] = {
-            "users": users
+            "users": rooms[room_id]["users"]
         }
 
         print(rooms[room_id]["users"])
@@ -212,7 +245,7 @@ def join_room_event(data):
         print(f"User {request.sid} joined room: {room_id}")
 
 
-@socketio.on("send_message")
+@ socketio.on("send_message")
 def send_message(data):
     room_id = data.get("room_id")
     message = data.get("message")
@@ -227,7 +260,7 @@ def send_message(data):
     print(f"Message sent to room {room_id}: {message}")
 
 
-@socketio.on("game_setup")
+@ socketio.on("game_setup")
 def initialize_game(data):
     room_id = data.get("room_id")
     turnIndex = data.get("turnIndex")
@@ -240,7 +273,7 @@ def initialize_game(data):
     print(data["user"]["username"])
 
 
-@socketio.on("card_played")
+@ socketio.on("card_played")
 def card_played(data):
     room_id = data.get("room_id")
     card = data.get("card")
@@ -261,7 +294,7 @@ def card_played(data):
                   "card": card, "username": user}, to=room_id)
 
 
-@socketio.on("update_player_inital")
+@ socketio.on("update_player_inital")
 def update_player_inital(data):
     hp = data.get("hp")
     cardsInHand = data.get("cardsInHand")
@@ -283,7 +316,7 @@ def update_player_inital(data):
     print(rooms[room_id]["users"])
 
 
-@socketio.on("opponent_card_update")
+@ socketio.on("opponent_card_update")
 def opponent_card_update(data):
     room_id = data.get("room_id")
     count = data.get("count")
@@ -300,7 +333,7 @@ def opponent_card_update(data):
                   "count": count, "user_id": user_id}, to=room_id)
 
 
-@socketio.on("turn_over")
+@ socketio.on("turn_over")
 # When the turn is over, switch to the next player based on who just went
 def turn_over(data):
     current = data.get("currentIndex")
@@ -316,7 +349,7 @@ def turn_over(data):
                       "index": 0, "user_id": playerList[0]["user_id"], "username": playerList[0]["username"]},  to=room_id)
 
 
-@socketio.on("apply_card_effect")
+@ socketio.on("apply_card_effect")
 def apply_card_effect(data):
     # apply the cards affect to the target
     card = data.get("card")
@@ -386,7 +419,7 @@ def apply_card_effect(data):
                               "shield": user["shield"], "user_id": user["user_id"], "type": card["type"], "amount": card["amount"]}, to=room_id)
 
 
-@socketio.on("user_leaving_room")
+@ socketio.on("user_leaving_room")
 def user_leaving_room(data):
     room_id = data.get("room_id")
     user_id = data.get("user_id")
@@ -394,13 +427,71 @@ def user_leaving_room(data):
     # Leave socket room
     leave_room(room_id)
 
-    # Remove user from room instance
+    if room_id in rooms:
+        # Remove user from room instance
+        rooms[room_id]["users"] = list(
+            filter(lambda user: user["user_id"] != user_id, rooms[room_id]["users"]))
+
+        # If all users have left, delete the room from the user instance
+        if (len(rooms[room_id]["users"]) == 0):
+            del rooms[room_id]
+
+    print(rooms)
+
+
+@socketio.on("user_left_game")
+def user_left_game(data):
+    room_id = data.get("room_id")
+    user_id = data.get("user_id")
+
+    print("USER LEFT ROOM")
+
+    # Remove the user ID from the room instance
     rooms[room_id]["users"] = list(
         filter(lambda user: user["user_id"] != user_id, rooms[room_id]["users"]))
 
+    # Remove the room if both users leave
     # If all users have left, delete the room from the user instance
     if (len(rooms[room_id]["users"]) == 0):
         del rooms[room_id]
+
+    # Let the other user in the room that the opponent disconnected and is leaving the room
+    socketio.emit("opponent_disconnected", {"room_id": room_id}, to=room_id)
+
+    print(rooms[room_id])
+
+
+@socketio.on("leave_all_rooms")
+def leave_all_rooms(data):
+    user_id = data.get("user_id")
+
+    # Leave all the rooms that this user is a part of
+    # First find the room id
+
+    room_id = 0
+    # Get all room ids
+    room_ids = list(rooms.keys())
+
+    # Find the user that left that room and delete him from the room
+    for id in room_ids:
+        for user in rooms[id]["users"]:
+            if user["sid"] == request.sid:
+                room_id = id
+
+    if room_id in rooms:
+        # Remove the user ID from the room instance
+        rooms[room_id]["users"] = list(
+            filter(lambda user: user["user_id"] != user_id, rooms[room_id]["users"]))
+
+        # Remove the room if both users leave
+        # If all users have left, delete the room from the user instance
+        if (len(rooms[room_id]["users"]) == 0):
+            del rooms[room_id]
+
+    print("=================")
+    print("ALL ROOMS: ")
+    print(rooms)
+    print("=================")
 
 
 if __name__ == "__main__":

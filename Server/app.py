@@ -8,7 +8,7 @@ from flask import Flask, jsonify, request
 
 # Initialize Flask app, SocketIO, and Supabase
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 socketio = SocketIO(app, cors_allowed_origins="*")
 load_dotenv()
 
@@ -495,4 +495,4 @@ def leave_all_rooms(data):
 
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000)

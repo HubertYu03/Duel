@@ -42,7 +42,7 @@ const RoomNavigation = () => {
   }, [socket, error]);
 
   return (
-    <div style={styles.container}>
+    <>
       {/* button to return to dashboard */}
       <motion.button
         className="navBackButton"
@@ -56,58 +56,69 @@ const RoomNavigation = () => {
       >
         ⬅ Back to Dashboard
       </motion.button>
+      <motion.div
+        style={styles.container}
+        initial={{
+          opacity: 0,
+          scale: 0.9,
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+        }}
+      >
+        <div className="roonNavTitle">Join or Create a Room</div>
+        <input
+          type="text"
+          value={roomID}
+          onChange={(e) => setRoomID(e.target.value)}
+          placeholder="Enter Room ID"
+          className="roomIdInput"
+        />
+        {error && (
+          <motion.p
+            style={styles.error}
+            initial={{
+              opacity: 0,
+              y: -10,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+          >
+            {error}
+          </motion.p>
+        )}
 
-      <div className="roonNavTitle">Join or Create a Room</div>
-      <input
-        type="text"
-        value={roomID}
-        onChange={(e) => setRoomID(e.target.value)}
-        placeholder="Enter Room ID"
-        className="roomIdInput"
-      />
-      {error && (
-        <motion.p
-          style={styles.error}
-          initial={{
-            opacity: 0,
-            y: -10,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-        >
-          {error}
-        </motion.p>
-      )}
-
-      <div className="navButtonContainer">
-        <motion.button
-          className="navButton"
-          whileHover={{
-            scale: 1.05,
-          }}
-          whileTap={{
-            scale: 0.95,
-          }}
-          onClick={handleCreateRoom}
-        >
-          Create Room
-        </motion.button>
-        <motion.button
-          className="navButton"
-          whileHover={{
-            scale: 1.05,
-          }}
-          whileTap={{
-            scale: 0.95,
-          }}
-          onClick={handleJoinRoom}
-        >
-          Join Room
-        </motion.button>
-      </div>
-    </div>
+        <div className="navButtonContainer">
+          <motion.button
+            className="navButton"
+            whileHover={{
+              scale: 1.05,
+            }}
+            whileTap={{
+              scale: 0.95,
+            }}
+            onClick={handleCreateRoom}
+          >
+            Create Room
+          </motion.button>
+          <motion.button
+            className="navButton"
+            whileHover={{
+              scale: 1.05,
+            }}
+            whileTap={{
+              scale: 0.95,
+            }}
+            onClick={handleJoinRoom}
+          >
+            Join Room
+          </motion.button>
+        </div>
+      </motion.div>
+    </>
   );
 };
 

@@ -789,16 +789,13 @@ const RoomPage = () => {
                   className="gameOverMessage"
                   initial={{
                     opacity: 0,
-                    scale: 1.5,
+                    scale: 2,
                   }}
                   animate={{
                     opacity: 1,
                     scale: 1,
                     transition: {
-                      type: "spring",
-                      stiffness: 100,
-                      damping: 20,
-                      mass: 1,
+                      ease: "easeIn",
                     },
                   }}
                   style={{
